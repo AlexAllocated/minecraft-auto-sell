@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "autosell",
+  "version": "${version}",
+  "name": "Auto Sell",
+  "description": "Automatically deposits a full player inventory into an approved server sell menu.",
+  "authors": [
+    "AlexAllocated"
+  ],
+  "contact": {
+    "sources": "https://github.com/AlexAllocated/minecraft-auto-sell"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.alexallocated.autosell.AutoSellClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

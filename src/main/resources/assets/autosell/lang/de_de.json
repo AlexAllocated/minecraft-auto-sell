@@ -1,0 +1,9 @@
+{
+  "key.category.autosell.main": "Automatisch verkaufen",
+  "key.autosell.toggle": "Automatischen Verkauf umschalten",
+  "message.autosell.enabled": "Automatischer Verkauf aktiviert",
+  "message.autosell.disabled": "Automatischer Verkauf deaktiviert",
+  "message.autosell.timeout": "Automatischer Verkauf: Verkaufsfenster wurde nicht rechtzeitig geöffnet",
+  "message.autosell.interrupted": "Automatischer Verkauf: Übertragung unterbrochen; kein neuer Versuch bis Inventarplatz frei ist",
+  "message.autosell.no_progress": "Automatischer Verkauf: Kein Inventarplatz wurde frei; kein automatischer Neuversuch"
+}

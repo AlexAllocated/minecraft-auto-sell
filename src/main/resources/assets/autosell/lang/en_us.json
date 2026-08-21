@@ -1,0 +1,9 @@
+{
+  "key.category.autosell.main": "Auto Sell",
+  "key.autosell.toggle": "Toggle Auto Sell",
+  "message.autosell.enabled": "Auto Sell enabled",
+  "message.autosell.disabled": "Auto Sell disabled",
+  "message.autosell.timeout": "Auto Sell: sell window did not open in time",
+  "message.autosell.interrupted": "Auto Sell: transfer interrupted; no automatic retry until inventory space is available",
+  "message.autosell.no_progress": "Auto Sell: no inventory space was freed; no automatic retry will be made"
+}
