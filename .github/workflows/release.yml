@@ -36,7 +36,10 @@ jobs:
 
           mod_jar="build/libs/autosell-$mod_version.jar"
           test -f "$mod_jar"
-          sha256sum "$mod_jar" > "$mod_jar.sha256"
+          (
+            cd build/libs
+            sha256sum "autosell-$mod_version.jar" > "autosell-$mod_version.jar.sha256"
+          )
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v7
         with:
