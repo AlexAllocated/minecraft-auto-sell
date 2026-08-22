@@ -6,12 +6,12 @@ It was built for a server whose operators explicitly permit this automation. Che
 
 ## Download
 
-Open the [latest release](https://github.com/AlexAllocated/minecraft-auto-sell/releases/latest), expand **Assets**, and download `autosell-1.0.0.jar`. The similarly named sources JAR is for developers and is not needed.
+Open the [latest release](https://github.com/AlexAllocated/minecraft-auto-sell/releases/latest), expand **Assets**, and download `autosell-1.0.1.jar`. The similarly named sources JAR is for developers and is not needed.
 
 ## Install
 
 1. Install Minecraft Java 26.2, [Fabric Loader 0.19.3 or newer](https://fabricmc.net/use/installer/), and a [Fabric API build for Minecraft 26.2](https://modrinth.com/mod/fabric-api).
-2. Copy the downloaded `autosell-1.0.0.jar` into the Minecraft `mods` directory.
+2. Copy the downloaded `autosell-1.0.1.jar` into the Minecraft `mods` directory.
 3. Join the server and press **F6** to enable Auto Sell. Press F6 again to disable it.
 
 The toggle appears under **Options > Controls > Key Binds > Auto Sell**, where it can be rebound. Auto Sell always starts disabled and resets to disabled after disconnecting.
@@ -23,7 +23,8 @@ The toggle appears under **Options > Controls > Key Binds > Auto Sell**, where i
 - The mod only deposits into a standard chest-style screen whose plain title is exactly `Items verkaufen`.
 - It never clicks any sell-menu slot, including the green confirmation button.
 - Items are shift-clicked one at a time with a short delay. The screen is closed through Minecraft's normal container-close action.
-- A full-inventory event produces at most one `/sell` attempt. The mod rearms only after observing an empty inventory slot, preventing command spam if items cannot be sold.
+- The mod rearms after detecting that at least one item moved into the sell window, even if the farm refills every inventory slot before the window closes.
+- If no item moves, it will not retry until an empty inventory slot is observed or Auto Sell is toggled off and on, preventing command spam for rejected items.
 - If the screen closes or changes unexpectedly, the mod stops the transfer and leaves the new screen alone.
 
 Try the first run with disposable items while watching the client. The server controls the final transaction behavior.
@@ -51,7 +52,7 @@ JDK 25 is required. The included Gradle wrapper downloads the rest of the toolch
 ./gradlew build
 ```
 
-The installable JAR is written to `build/libs/autosell-1.0.0.jar`.
+The installable JAR is written to `build/libs/autosell-1.0.1.jar`.
 
 Pushing a version tag such as `v1.0.0` runs the release workflow. The workflow requires the tag to match `mod_version`, runs the full build and tests, creates a SHA-256 checksum, and publishes both files on a GitHub release.
 

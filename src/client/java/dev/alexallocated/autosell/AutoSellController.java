@@ -17,7 +17,8 @@ final class AutoSellController {
 	private final AutoSellStateMachine stateMachine = new AutoSellStateMachine();
 	private final AutoSellSettings settings;
 	private final Deque<Integer> transferQueue = new ArrayDeque<>();
-	private int occupiedSlotsAtStart;
+	private boolean transferMadeProgress;
+	private int containerItemCountAtStart = -1;
 
 	AutoSellController(AutoSellSettings settings) {
 		this.settings = settings;
@@ -25,7 +26,7 @@ final class AutoSellController {
 
 	void toggle(Minecraft client) {
 		boolean enabled = stateMachine.toggle();
-		transferQueue.clear();
+		clearTransferTracking();
 		if (client.player != null) {
 			client.player.sendSystemMessage(Component.translatable(
 					enabled ? "message.autosell.enabled" : "message.autosell.disabled"
@@ -35,8 +36,7 @@ final class AutoSellController {
 
 	void reset() {
 		stateMachine.reset();
-		transferQueue.clear();
-		occupiedSlotsAtStart = 0;
+		clearTransferTracking();
 	}
 
 	void tick(Minecraft client) {
@@ -44,31 +44,38 @@ final class AutoSellController {
 		boolean inWorld = player != null && client.level != null;
 		boolean matchingScreen = inWorld && isMatchingSellScreen(client);
 		boolean inventoryFull = inWorld && isMainInventoryFull(player);
+		if (matchingScreen) {
+			observeContainerProgress(player);
+		}
 
 		AutoSellStateMachine.Input input = new AutoSellStateMachine.Input(
 				inWorld,
 				inWorld && client.gui.screen() == null,
 				inventoryFull,
 				matchingScreen,
-				!transferQueue.isEmpty()
+				!transferQueue.isEmpty(),
+				transferMadeProgress
 		);
 
 		AutoSellStateMachine.Action action = stateMachine.tick(input, settings);
 		if (!inWorld) {
-			transferQueue.clear();
+			clearTransferTracking();
 			return;
 		}
 
 		switch (action) {
 			case NONE -> {
 			}
-			case SEND_SELL_COMMAND -> sendSellCommand(client);
+			case SEND_SELL_COMMAND -> {
+				clearTransferTracking();
+				sendSellCommand(client);
+			}
 			case BEGIN_TRANSFER -> beginTransfer(player);
 			case MOVE_NEXT_SLOT -> moveNextSlot(client, player);
 			case CLOSE_SCREEN -> closeSellScreen(client, player);
 			case SCREEN_TIMEOUT -> notify(player, "message.autosell.timeout");
 			case TRANSFER_INTERRUPTED -> {
-				transferQueue.clear();
+				clearTransferTracking();
 				notify(player, "message.autosell.interrupted");
 			}
 		}
@@ -86,12 +93,6 @@ final class AutoSellController {
 		return InventoryOccupancy.isFull(occupied);
 	}
 
-	private int countOccupiedMainSlots(LocalPlayer player) {
-		return (int) player.getInventory().getNonEquipmentItems().stream()
-				.filter(stack -> !stack.isEmpty())
-				.count();
-	}
-
 	private void sendSellCommand(Minecraft client) {
 		if (client.getConnection() != null) {
 			client.getConnection().sendCommand("sell");
@@ -100,9 +101,10 @@ final class AutoSellController {
 
 	private void beginTransfer(LocalPlayer player) {
 		transferQueue.clear();
-		occupiedSlotsAtStart = countOccupiedMainSlots(player);
+		transferMadeProgress = false;
 
 		AbstractContainerMenu menu = player.containerMenu;
+		containerItemCountAtStart = countContainerItems(menu, player);
 		List<TransferSlotSelector.SlotView> slots = new ArrayList<>();
 		for (int menuSlot = 0; menuSlot < menu.slots.size(); menuSlot++) {
 			Slot slot = menu.slots.get(menuSlot);
@@ -137,6 +139,7 @@ final class AutoSellController {
 
 		Slot slot = menu.slots.get(menuSlot);
 		if (isMainInventorySlot(slot, player) && slot.hasItem()) {
+			int countBefore = slot.getItem().getCount();
 			client.gameMode.handleContainerInput(
 					menu.containerId,
 					menuSlot,
@@ -144,13 +147,17 @@ final class AutoSellController {
 					ContainerInput.QUICK_MOVE,
 					player
 			);
+
+			Slot updatedSlot = menu.slots.get(menuSlot);
+			if (!updatedSlot.hasItem() || updatedSlot.getItem().getCount() < countBefore) {
+				transferMadeProgress = true;
+			}
 		}
 	}
 
 	private void closeSellScreen(Minecraft client, LocalPlayer player) {
 		transferQueue.clear();
-		int occupiedNow = countOccupiedMainSlots(player);
-		if (occupiedNow >= occupiedSlotsAtStart) {
+		if (!transferMadeProgress) {
 			notify(player, "message.autosell.no_progress");
 		}
 
@@ -158,6 +165,31 @@ final class AutoSellController {
 				&& settings.windowTitle().equals(screen.getTitle().getString())) {
 			player.closeContainer();
 		}
+
+		containerItemCountAtStart = -1;
+	}
+
+	private void observeContainerProgress(LocalPlayer player) {
+		if (containerItemCountAtStart < 0) {
+			return;
+		}
+
+		if (countContainerItems(player.containerMenu, player) > containerItemCountAtStart) {
+			transferMadeProgress = true;
+		}
+	}
+
+	private int countContainerItems(AbstractContainerMenu menu, LocalPlayer player) {
+		return menu.slots.stream()
+				.filter(slot -> slot.container != player.getInventory())
+				.mapToInt(slot -> slot.getItem().getCount())
+				.sum();
+	}
+
+	private void clearTransferTracking() {
+		transferQueue.clear();
+		transferMadeProgress = false;
+		containerItemCountAtStart = -1;
 	}
 
 	private void notify(LocalPlayer player, String translationKey) {

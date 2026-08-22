@@ -60,6 +60,31 @@ class AutoSellStateMachineTest {
 	}
 
 	@Test
+	void successfulTransferRearmsEvenWhenFarmRefillsInventoryImmediately() {
+		AutoSellSettings shortDelay = new AutoSellSettings("Items verkaufen", 100, 3, 1);
+		startWaitingForScreen();
+		machine.tick(input(true, false, true, true, false), shortDelay);
+		machine.tick(input(true, false, true, true, false), shortDelay);
+
+		assertEquals(CLOSE_SCREEN, machine.tick(input(true, false, true, true, false, true), shortDelay));
+		assertEquals(SEND_SELL_COMMAND, machine.tick(input(true, true, true, false, false), shortDelay));
+	}
+
+	@Test
+	void unsuccessfulTransferStillRequiresAnEmptySlotBeforeRetrying() {
+		AutoSellSettings shortDelay = new AutoSellSettings("Items verkaufen", 100, 3, 1);
+		startWaitingForScreen();
+		machine.tick(input(true, false, true, true, false), shortDelay);
+		machine.tick(input(true, false, true, true, false), shortDelay);
+
+		assertEquals(CLOSE_SCREEN, machine.tick(input(true, false, true, true, false, false), shortDelay));
+		assertEquals(NONE, machine.tick(input(true, true, true, false, false), shortDelay));
+
+		machine.tick(input(true, true, false, false, false), shortDelay);
+		assertEquals(SEND_SELL_COMMAND, machine.tick(input(true, true, true, false, false), shortDelay));
+	}
+
+	@Test
 	void timesOutAtConfiguredLimitAndDoesNotSpamRetry() {
 		AutoSellSettings shortTimeout = new AutoSellSettings("Items verkaufen", 2, 3, 10);
 		machine.toggle();
@@ -111,12 +136,31 @@ class AutoSellStateMachineTest {
 			boolean matchingScreen,
 			boolean hasQueuedSlot
 	) {
+		return input(
+				inWorld,
+				normalGameplay,
+				inventoryFull,
+				matchingScreen,
+				hasQueuedSlot,
+				false
+		);
+	}
+
+	private AutoSellStateMachine.Input input(
+			boolean inWorld,
+			boolean normalGameplay,
+			boolean inventoryFull,
+			boolean matchingScreen,
+			boolean hasQueuedSlot,
+			boolean transferSucceeded
+	) {
 		return new AutoSellStateMachine.Input(
 				inWorld,
 				normalGameplay,
 				inventoryFull,
 				matchingScreen,
-				hasQueuedSlot
+				hasQueuedSlot,
+				transferSucceeded
 		);
 	}
 }

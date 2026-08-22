@@ -24,7 +24,8 @@ public final class AutoSellStateMachine {
 			boolean normalGameplay,
 			boolean inventoryFull,
 			boolean matchingSellScreen,
-			boolean hasQueuedSlot
+			boolean hasQueuedSlot,
+			boolean transferSucceeded
 	) {
 	}
 
@@ -109,6 +110,7 @@ public final class AutoSellStateMachine {
 
 	private Action transfer(Input input, AutoSellSettings settings) {
 		if (!input.matchingSellScreen()) {
+			armed = input.transferSucceeded();
 			phase = Phase.MONITORING;
 			return Action.TRANSFER_INTERRUPTED;
 		}
@@ -130,12 +132,14 @@ public final class AutoSellStateMachine {
 
 	private Action waitToClose(Input input) {
 		if (!input.matchingSellScreen()) {
+			armed = input.transferSucceeded();
 			phase = Phase.MONITORING;
 			return Action.TRANSFER_INTERRUPTED;
 		}
 
 		ticksRemaining--;
 		if (ticksRemaining <= 0) {
+			armed = input.transferSucceeded();
 			phase = Phase.MONITORING;
 			return Action.CLOSE_SCREEN;
 		}
